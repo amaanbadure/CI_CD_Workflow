@@ -1,0 +1,65 @@
+name: Sacred ML Workflow CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  train-and-evaluate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run Sacred experiment
+      run: python sacred_runner.py
+      
+    - name: Upload experiment logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: experiment-logs
+        path: experiment_logs/
+        retention-days: 14
+
+    - name: Check experiment results
+      run: |
+        python -c "
+        import json
+        import glob
+        import sys
+        import os
+        
+        # Get the latest run
+        runs = glob.glob('experiment_logs/*/run.json')
+        latest_run = max(runs, key=lambda x: os.path.getctime(x))
+        
+        with open(latest_run) as f:
+            results = json.load(f)
+            
+        # Check if accuracy meets threshold
+        accuracy = results['info']['test_accuracy']
+        if accuracy < 0.85:  # Set your threshold
+            print(f'Accuracy {accuracy} below threshold 0.85')
+            sys.exit(1)
+        "
