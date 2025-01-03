@@ -9,10 +9,9 @@ from sacred import Experiment
 ex = Experiment("CIFAR10_Workflow")
 
 @ex.capture
-def train_model(epochs, learning_rate, momentum, device, _run):
-    train_loader, _ = load_data()
+def train_model(_run, learning_rate, momentum, device, epochs, batch_size, num_workers):  # Add batch_size and num_workers
+    train_loader, _ = load_data(batch_size=batch_size, num_workers=num_workers)
     
-    # Initialize model, loss, and optimizer
     model = SimpleCNN(num_classes=10).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum)

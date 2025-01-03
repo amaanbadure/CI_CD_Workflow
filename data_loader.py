@@ -6,7 +6,7 @@ from sacred import Experiment
 ex = Experiment("CIFAR10_Workflow")
 
 @ex.capture
-def load_data(batch_size, num_workers):
+def load_data(batch_size=64, num_workers=2):  # Add default values
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))

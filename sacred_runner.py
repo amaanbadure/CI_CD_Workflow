@@ -1,4 +1,4 @@
-#sacred_runner.py
+# sacred_runner.py
 from sacred import Experiment
 from sacred.observers import FileStorageObserver
 from train import train_model
@@ -16,7 +16,7 @@ def config():
     num_workers = 2
     
     # Model parameters
-    input_size = 3 * 32 * 32  # CIFAR-10 image size
+    input_size = 3 * 32 * 32
     num_classes = 10
     
     # Training parameters
@@ -28,12 +28,27 @@ def config():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
 @ex.main
-def main(_run):
+def main(_run, learning_rate, momentum, device, epochs, batch_size, num_workers):
     # Run training
-    model = train_model(_run)
+    model = train_model(
+        _run=_run,
+        learning_rate=learning_rate,
+        momentum=momentum,
+        device=device,
+        epochs=epochs,
+        batch_size=batch_size,
+        num_workers=num_workers
+    )
     
     # Run evaluation
-    accuracy = evaluate_model(model, _run)
+    # Run evaluation with device parameter
+    accuracy = evaluate_model(
+        model=model, 
+        _run=_run,
+        device=device,
+        batch_size=batch_size,
+        num_workers=num_workers
+    )
     return accuracy
 
 if __name__ == "__main__":

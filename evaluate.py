@@ -6,15 +6,16 @@ from sacred import Experiment
 ex = Experiment("CIFAR10_Workflow")
 
 @ex.capture
-def evaluate_model(model, device, _run):
-    _, test_loader = load_data()
+def evaluate_model(model, _run, device, batch_size, num_workers):  # Add device and other parameters
+    _, test_loader = load_data(batch_size=batch_size, num_workers=num_workers)
     model.eval()
     correct = 0
     total = 0
     
     with torch.no_grad():
         for inputs, labels in test_loader:
-            inputs, labels = inputs.to(device), labels.to(device)
+            inputs = inputs.to(device)  # Fix device usage
+            labels = labels.to(device)  # Fix device usage
             outputs = model(inputs)
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
