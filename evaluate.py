@@ -21,10 +21,11 @@ def evaluate_model(model, _run, device, batch_size, num_workers):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
     
-    accuracy = correct / total
+    accuracy = float(correct) / total  # Convert to float explicitly
     print(f"Test Accuracy: {accuracy:.4f}")
     
-    # Store results in the format expected by the checker
-    _run.info['test_accuracy'] = accuracy
+    # Log accuracy in multiple places to ensure it's captured
+    _run.log_scalar("test_accuracy", accuracy)
+    _run.info["test_accuracy"] = accuracy
     
     return accuracy
