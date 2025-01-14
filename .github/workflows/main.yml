@@ -44,22 +44,46 @@ jobs:
 
     - name: Check experiment results
       run: |
-        python -c "
+        python - <<EOF
         import json
         import glob
         import sys
         import os
         
-        # Get the latest run
-        runs = glob.glob('experiment_logs/*/run.json')
-        latest_run = max(runs, key=lambda x: os.path.getctime(x))
-        
-        with open(latest_run) as f:
-            results = json.load(f)
+        try:
+            # Get the latest run
+            runs = glob.glob('experiment_logs/*/run.json')
+            if not runs:
+                print("No run.json files found!")
+                sys.exit(1)
+                
+            latest_run = max(runs, key=lambda x: os.path.getctime(x))
+            print(f"Reading results from: {latest_run}")
             
-        # Check if accuracy meets threshold
-        accuracy = results['info']['test_accuracy']
-        if accuracy < 0.85:  # Set your threshold
-            print(f'Accuracy {accuracy} below threshold 0.85')
+            with open(latest_run) as f:
+                results = json.load(f)
+                print(f"Results structure: {results.keys()}")
+                
+                # Try to get accuracy from different possible locations
+                accuracy = None
+                if 'info' in results and 'test_accuracy' in results['info']:
+                    accuracy = results['info']['test_accuracy']
+                elif 'test_accuracy' in results:
+                    accuracy = results['test_accuracy']
+                
+                if accuracy is None:
+                    print("Could not find test_accuracy in results!")
+                    sys.exit(1)
+                    
+                print(f"Found accuracy: {accuracy}")
+                
+                if accuracy < 0.85:
+                    print(f'Accuracy {accuracy} below threshold 0.85')
+                    sys.exit(1)
+                else:
+                    print(f'Accuracy {accuracy} meets or exceeds threshold 0.85')
+                    
+        except Exception as e:
+            print(f"Error processing results: {str(e)}")
             sys.exit(1)
-        "
+        EOF
